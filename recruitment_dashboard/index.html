@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solver India — Recruitment Analytics Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f0f4f8; --surface:#fff; --surface2:#f7f9fc;
+  --primary:#1a3c6e; --primary-light:#2563b0;
+  --accent:#0ea5e9; --accent2:#38bdf8;
+  --dark:#1e293b; --mid:#64748b; --light:#94a3b8;
+  --border:#e2e8f0;
+  --success:#10b981; --warning:#f59e0b; --danger:#ef4444;
+  --purple:#8b5cf6; --teal:#14b8a6;
+  --shadow:0 2px 16px rgba(26,60,110,0.08);
+  --shadow-lg:0 8px 32px rgba(26,60,110,0.14);
+  --radius:16px; --radius-sm:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--dark);min-height:100vh}
+
+/* Sidebar */
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:240px;background:var(--primary);display:flex;flex-direction:column;z-index:100;box-shadow:4px 0 24px rgba(26,60,110,0.2)}
+.sidebar-brand{padding:26px 24px 18px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.brand-name{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.4px}
+.brand-sub{font-size:10px;color:rgba(255,255,255,0.45);letter-spacing:1.2px;text-transform:uppercase;margin-top:3px}
+.nav{padding:14px 10px;flex:1}
+.nav-label{font-size:9.5px;color:rgba(255,255,255,0.32);letter-spacing:1.5px;text-transform:uppercase;padding:0 12px;margin:14px 0 5px}
+.nav-item{display:flex;align-items:center;gap:11px;padding:10px 14px;border-radius:9px;cursor:pointer;color:rgba(255,255,255,0.6);font-size:13px;font-weight:500;transition:all .18s;margin-bottom:2px;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:rgba(255,255,255,0.1);color:#fff}
+.nav-item.active{background:rgba(14,165,233,0.22);color:var(--accent2)}
+.nav-item .icon{font-size:16px;width:20px;text-align:center}
+.sidebar-footer{padding:14px 22px;border-top:1px solid rgba(255,255,255,0.08);font-size:10.5px;color:rgba(255,255,255,0.28)}
+
+/* Main */
+.main{margin-left:240px;min-height:100vh;display:flex;flex-direction:column}
+
+/* Topbar */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 30px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:90;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+.topbar-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:var(--primary)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.badge-live{background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:.4px;display:flex;align-items:center;gap:5px}
+.badge-live::before{content:'●';font-size:7px;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.date-chip{background:var(--bg);padding:5px 13px;border-radius:8px;font-size:11.5px;color:var(--mid)}
+
+/* Tabs (dataset switcher) */
+.dataset-tabs{display:flex;gap:2px;background:var(--bg);border-radius:10px;padding:3px}
+.dtab{padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:inherit;background:transparent;color:var(--mid);transition:all .2s}
+.dtab.active{background:var(--primary);color:#fff;box-shadow:0 2px 8px rgba(26,60,110,0.3)}
+
+/* Pages */
+.page{display:none;padding:26px 30px 40px}
+.page.active{display:block}
+.page-header{margin-bottom:20px}
+.page-title{font-family:'Syne',sans-serif;font-size:21px;font-weight:800;color:var(--primary)}
+.page-sub{font-size:12.5px;color:var(--mid);margin-top:3px}
+
+/* Filter Bar */
+.filter-bar{background:var(--surface);border-radius:var(--radius-sm);padding:12px 18px;margin-bottom:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:var(--shadow);border:1px solid var(--border)}
+.filter-label{font-size:11.5px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.5px}
+.filter-bar select{padding:6px 12px;border:1px solid var(--border);border-radius:8px;font-size:12.5px;color:var(--dark);background:var(--bg);cursor:pointer;font-family:inherit;outline:none}
+.filter-bar select:focus{border-color:var(--accent)}
+.btn-reset{margin-left:auto;padding:6px 14px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.btn-reset:hover{background:var(--primary-light)}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.kpi-card{background:var(--surface);border-radius:var(--radius);padding:20px 20px 16px;box-shadow:var(--shadow);border:1px solid var(--border);position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.kpi-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:16px 16px 0 0}
+.kpi-card.blue::after{background:linear-gradient(90deg,var(--primary),var(--accent))}
+.kpi-card.teal::after{background:linear-gradient(90deg,var(--teal),#34d399)}
+.kpi-card.purple::after{background:linear-gradient(90deg,var(--purple),#a78bfa)}
+.kpi-card.orange::after{background:linear-gradient(90deg,#f59e0b,#fcd34d)}
+.kpi-card.green::after{background:linear-gradient(90deg,#10b981,#6ee7b7)}
+.kpi-card.red::after{background:linear-gradient(90deg,#ef4444,#fca5a5)}
+.kpi-card.sky::after{background:linear-gradient(90deg,#0ea5e9,#7dd3fc)}
+.kpi-card.indigo::after{background:linear-gradient(90deg,#6366f1,#a5b4fc)}
+.kpi-icon{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:19px;margin-bottom:12px}
+.kpi-card.blue .kpi-icon{background:rgba(26,60,110,.08)}
+.kpi-card.teal .kpi-icon{background:rgba(20,184,166,.1)}
+.kpi-card.purple .kpi-icon{background:rgba(139,92,246,.1)}
+.kpi-card.orange .kpi-icon{background:rgba(245,158,11,.1)}
+.kpi-card.green .kpi-icon{background:rgba(16,185,129,.1)}
+.kpi-card.red .kpi-icon{background:rgba(239,68,68,.1)}
+.kpi-card.sky .kpi-icon{background:rgba(14,165,233,.1)}
+.kpi-card.indigo .kpi-icon{background:rgba(99,102,241,.1)}
+.kpi-value{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:var(--dark);line-height:1}
+.kpi-label{font-size:11.5px;color:var(--mid);margin-top:5px;font-weight:500}
+.kpi-trend{font-size:10.5px;margin-top:7px}
+.kpi-trend.up{color:var(--success)}
+.kpi-trend.down{color:var(--danger)}
+
+/* Chart grid */
+.chart-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.chart-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:18px}
+.chart-grid-full{margin-bottom:18px}
+.chart-card{background:var(--surface);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.chart-card.span2{grid-column:span 2}
+.chart-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.chart-title{font-size:13.5px;font-weight:700;color:var(--primary)}
+.chart-sub{font-size:11px;color:var(--light);margin-top:2px}
+.chart-badge{font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.badge-blue{background:rgba(37,99,176,.1);color:var(--primary-light)}
+.badge-teal{background:rgba(20,184,166,.1);color:var(--teal)}
+.badge-purple{background:rgba(139,92,246,.1);color:var(--purple)}
+
+/* Legend */
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--mid)}
+.legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+/* Heatmap */
+.heatmap-wrap{overflow-x:auto}
+.heatmap-table{border-collapse:collapse;width:100%;font-size:11.5px}
+.heatmap-table th{padding:7px 11px;font-weight:600;color:var(--mid);text-align:left;background:var(--surface2);border:1px solid var(--border)}
+.heatmap-table td{padding:7px 11px;border:1px solid var(--border);text-align:center;font-weight:600}
+
+/* Gauge */
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 0}
+.gauge-value{font-family:'Syne',sans-serif;font-size:40px;font-weight:800;color:var(--primary)}
+.gauge-label{font-size:12.5px;color:var(--mid);margin-top:3px}
+.gauge-bar-wrap{width:100%;background:var(--border);border-radius:99px;height:13px;margin:14px 0 7px;overflow:hidden}
+.gauge-bar{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--success));transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+
+/* Funnel */
+.funnel-wrap{display:flex;flex-direction:column;gap:7px;padding:6px 0}
+.funnel-row{display:flex;align-items:center;gap:12px}
+.funnel-bar-outer{flex:1;background:var(--bg);border-radius:8px;height:36px;overflow:hidden}
+.funnel-bar-inner{height:100%;border-radius:8px;display:flex;align-items:center;padding-left:12px;color:#fff;font-size:12.5px;font-weight:700;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+.funnel-meta{min-width:160px}
+.funnel-step{font-size:12.5px;font-weight:600;color:var(--dark)}
+.funnel-count{font-size:10.5px;color:var(--mid)}
+
+/* Decomp */
+.decomp-tree{display:flex;gap:16px;overflow-x:auto;padding:6px 0;align-items:center}
+.decomp-node{background:var(--bg);border-radius:10px;padding:12px 14px;border-left:3px solid var(--accent);min-width:120px;text-align:center;flex-shrink:0}
+.dn-label{font-size:10px;color:var(--mid);text-transform:uppercase;letter-spacing:.5px}
+.dn-val{font-size:19px;font-weight:800;color:var(--primary)}
+.dn-pct{font-size:10.5px;color:var(--accent);font-weight:600}
+.decomp-arrow{color:var(--light);font-size:18px;flex-shrink:0}
+
+/* Smart Narrative */
+.narrative-card{background:linear-gradient(135deg,var(--primary) 0%,#1e4d8c 100%);border-radius:var(--radius);padding:22px 26px;color:#fff;margin-bottom:18px;position:relative;overflow:hidden}
+.narrative-card::before{content:'';position:absolute;top:-40px;right:-40px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,0.05)}
+.narrative-card::after{content:'';position:absolute;bottom:-50px;right:50px;width:110px;height:110px;border-radius:50%;background:rgba(14,165,233,0.15)}
+.narrative-tag{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent2);margin-bottom:9px}
+.narrative-text{font-size:14.5px;line-height:1.65;color:rgba(255,255,255,0.9);position:relative;z-index:1}
+.narrative-text strong{color:var(--accent2)}
+
+/* DQ Grid */
+.dq-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.dq-item{background:var(--surface2);border-radius:10px;padding:14px;text-align:center;border:1px solid var(--border)}
+.dq-val{font-family:'Syne',sans-serif;font-size:24px;font-weight:800}
+.dq-lbl{font-size:10.5px;color:var(--mid);margin-top:3px}
+.dq-item.good .dq-val{color:var(--success)}
+.dq-item.warn .dq-val{color:var(--warning)}
+.dq-item.bad .dq-val{color:var(--danger)}
+
+/* Treemap */
+.treemap-wrap{display:flex;flex-wrap:wrap;gap:4px;height:210px;overflow:hidden}
+.treemap-cell{display:flex;align-items:center;justify-content:center;flex-direction:column;border-radius:8px;color:#fff;font-size:10.5px;font-weight:600;text-align:center;padding:4px;transition:filter .2s;cursor:default}
+.treemap-cell:hover{filter:brightness(1.1)}
+.treemap-val{font-size:15px;font-weight:800}
+
+/* Key Influencers */
+.ki-list{display:flex;flex-direction:column;gap:9px}
+.ki-row{display:flex;align-items:center;gap:11px}
+.ki-label{font-size:12.5px;font-weight:600;color:var(--dark);min-width:130px}
+.ki-bar-outer{flex:1;background:var(--bg);border-radius:99px;height:10px;overflow:hidden}
+.ki-bar-inner{height:100%;border-radius:99px}
+.ki-score{font-size:11.5px;font-weight:700;color:var(--mid);min-width:36px;text-align:right}
+
+/* Comparison table */
+.compare-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.compare-table th{background:var(--primary);color:#fff;padding:10px 14px;text-align:left;font-weight:600}
+.compare-table th:first-child{border-radius:8px 0 0 0}
+.compare-table th:last-child{border-radius:0 8px 0 0}
+.compare-table td{padding:9px 14px;border-bottom:1px solid var(--border)}
+.compare-table tr:nth-child(even) td{background:var(--surface2)}
+.compare-table tr:last-child td:first-child{border-radius:0 0 0 8px}
+.compare-table tr:last-child td:last-child{border-radius:0 0 8px 0}
+.compare-table .up{color:var(--success);font-weight:700}
+.compare-table .down{color:var(--danger);font-weight:700}
+
+/* Responsive */
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.chart-grid-3{grid-template-columns:1fr 1fr}}
+@media(max-width:768px){.sidebar{display:none}.main{margin-left:0}.kpi-grid{grid-template-columns:1fr 1fr}.chart-grid-2,.chart-grid-3{grid-template-columns:1fr}.dq-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-name">SolverIndia</div>
+    <div class="brand-sub">Recruitment Analytics</div>
+  </div>
+  <div class="nav">
+    <div class="nav-label">Dashboard</div>
+    <button class="nav-item active" onclick="showPage('p1',this)"><span class="icon">📊</span>Executive Summary</button>
+    <button class="nav-item" onclick="showPage('p2',this)"><span class="icon">📈</span>Recruitment Analytics</button>
+    <button class="nav-item" onclick="showPage('p3',this)"><span class="icon">📍</span>Location Insights</button>
+    <button class="nav-item" onclick="showPage('p4',this)"><span class="icon">🔽</span>Candidate Funnel</button>
+    <button class="nav-item" onclick="showPage('p5',this)"><span class="icon">🛡️</span>Data Quality</button>
+    <div class="nav-label">Compare</div>
+    <button class="nav-item" onclick="showPage('p6',this)"><span class="icon">⚖️</span>Dataset Comparison</button>
+  </div>
+  <div class="sidebar-footer">© 2026 Solver India · v3.0</div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">Executive Summary</div>
+    <div class="topbar-right">
+      <div class="dataset-tabs">
+        <button class="dtab" onclick="switchDataset('overall',this)">Overall Data</button>
+        <button class="dtab active" onclick="switchDataset('unordered',this)">Unordered Data</button>
+        <button class="dtab" onclick="switchDataset('ordered',this)">Ordered Data</button>
+      </div>
+      <div class="date-chip" id="liveDateChip"></div>
+      <div class="badge-live">Live</div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE 1: Executive Summary ═══ -->
+  <div class="page active" id="p1">
+    <div class="page-header">
+      <div class="page-title">Executive Summary</div>
+      <div class="page-sub" id="p1sub">Holistic overview — Unordered Dataset · 338 Candidates · May 2026</div>
+    </div>
+    <div class="filter-bar">
+      <span class="filter-label">🎛 Filters</span>
+      <select id="f-process"><option value="">All Processes</option></select>
+      <select id="f-jl"><option value="">All JL</option><option>3A</option><option>2A</option><option>4B</option></select>
+      <select id="f-remark"><option value="">All Remarks</option><option>PE</option><option>NP</option><option>NA</option></select>
+      <button class="btn-reset" onclick="resetFilters()">↺ Reset</button>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card blue"><div class="kpi-icon">👥</div><div class="kpi-value" id="kpi-total">338</div><div class="kpi-label">Total Candidates</div><div class="kpi-trend up" id="kpi-total-sub">↑ 5× larger pipeline</div></div>
+      <div class="kpi-card teal"><div class="kpi-icon">🌟</div><div class="kpi-value" id="kpi-unique">315</div><div class="kpi-label">Unique Candidates</div><div class="kpi-trend up" id="kpi-unique-sub">↑ 93.2% unique rate</div></div>
+      <div class="kpi-card purple"><div class="kpi-icon">🏢</div><div class="kpi-value" id="kpi-process">8</div><div class="kpi-label">Active Processes</div><div class="kpi-trend up" id="kpi-process-sub">↑ Multi-domain</div></div>
+      <div class="kpi-card orange"><div class="kpi-icon">📍</div><div class="kpi-value" id="kpi-location">8</div><div class="kpi-label">Source Locations</div><div class="kpi-trend up" id="kpi-location-sub">↑ Pan India</div></div>
+      <div class="kpi-card green"><div class="kpi-icon">📞</div><div class="kpi-value" id="kpi-contacts">334</div><div class="kpi-label">Valid Contacts</div><div class="kpi-trend up" id="kpi-contacts-sub">↑ 98.8% valid</div></div>
+      <div class="kpi-card sky"><div class="kpi-icon">📧</div><div class="kpi-value" id="kpi-emails">331</div><div class="kpi-label">Valid Email IDs</div><div class="kpi-trend up" id="kpi-emails-sub">↑ 97.9% valid</div></div>
+      <div class="kpi-card red"><div class="kpi-icon">⚠️</div><div class="kpi-value" id="kpi-dup">13.0%</div><div class="kpi-label">Duplicate Records</div><div class="kpi-trend down" id="kpi-dup-sub">↓ 44 duplicates</div></div>
+      <div class="kpi-card indigo"><div class="kpi-icon">✅</div><div class="kpi-value" id="kpi-dq">98.4%</div><div class="kpi-label">Data Quality Score</div><div class="kpi-trend up" id="kpi-dq-sub">↑ Excellent</div></div>
+    </div>
+    <div class="narrative-card">
+      <div class="narrative-tag">🤖 Smart Narrative — AI-Generated Insight</div>
+      <div class="narrative-text" id="narrativeText"></div>
+    </div>
+    <div class="chart-grid-2">
+      <div class="chart-card">
+        <div class="chart-header"><div><div class="chart-title">Process Distribution</div><div class="chart-sub">Candidates by Process</div></div><span class="chart-badge badge-blue">BAR CHART</span></div>
+        <div style="position:relative;height:260px"><canvas id="processChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div><div class="chart-title">JL Level Distribution</div><div class="chart-sub">Candidate count by Job Level</div></div><span class="chart-badge badge-purple">PIE CHART</span></div>
+        <div style="position:relative;height:200px"><canvas id="jlChart"></canvas></div>
+        <div class="legend" id="jlLegend"></div>
+      </div>
+    </div>
+    <div class="chart-grid-2">
+      <div class="chart-card">
+        <div class="chart-header"><div><div class="chart-title">Remark / Disposition Analysis</div><div class="chart-sub">Candidate outcome distribution</div></div><span class="chart-badge badge-teal">DONUT</span></div>
+        <div style="position:relative;height:200px"><canvas id="remarkChart"></canvas></div>
+        <div class="legend" id="remarkLegend"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div><div class="chart-title">Preferred Location (from Remark)</div><div class="chart-sub">Where shortlisted candidates prefer to work</div></div><span class="chart-badge badge-blue">BAR CHART</span></div>
+        <div style="position:relative;height:200px"><canvas id="prefLocChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE 2: Recruitment Analytics ═══ -->
+  <div class="page" id="p2">
+    <div class="page-header">
+      <div class="page-title">Recruitment Analytics</div>
+      <div class="page-sub">Deep-dive into process and candidate breakdown</div>
+    </div>
+    <div class="chart-card chart-grid-full" style="margin-bottom:18px">
+      <div class="chart-header"><div><div class="chart-title">Decomposition Tree — Candidate Breakdown</div><div class="chart-sub">Total → Top Process → Top Location → JL</div></div><span class="chart-badge badge-blue">DECOMPOSITION</span></div>
+      <div class="decomp-tree" id="decompTree"></div>
+    </div>
+    <div class="chart-grid-2">
+      <div class="chart-card">
+        <div class="chart-header"><div><div class="chart-title">Key Influencers — Process Volume</div><div class="chart-sub">Which processes drive most pipeline?</div></div><span class="chart-badge badge-teal">KEY INFLUENCERS</span></div>
+        <div class="ki-list" id="kiList"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div><div class="chart-title">Duplicate Record Analysis</div><div class="chart-sub">Unique vs Duplicate by Process</div></div><span class="chart-badge badge-purple">STACKED BAR</span></div>
+        <div style="position:relative;height:260px"><canvas id="dupChart"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-card chart-grid-full">
+      <div class="chart-header"><div><div class="chart-title">Candidate Density Treemap</div><div class="chart-sub">Process contribution by size</div></div><span class="chart-badge badge-blue">TREEMAP</span></div>
+      <div class="treemap-wrap" id="processTreap"></div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE 3: Location Insights ═══ -->
+  <div class="page" id="p3">
+    <div class="page-header">
+      <div class="page-title">Location Insights</div>
+      <div class="page-sub">Geographical distribution of recruitment pipeline</div>
+    </div>
+    <div class="chart-grid-2">
+      <div class="chart-card">
+        <div class="chart-header"><div><div class="chart-title">Source Locations (Top 10)</div><div class="chart-sub">Candidates by current/source city</div></div><span class="chart-badge badge-blue">H-BAR</span></div>
+        <div style="position:relative;height:300px"><canvas id="locationChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div><div class="chart-title">Preferred Destination (Top 10)</div><div class="chart-sub">Where candidates want to be placed</div></div><span class="chart-badge badge-teal">BAR CHART</span></div>
+        <div style="position:relative;height:300px"><canvas id="prefDestChart"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-card chart-grid-full">
+      <div class="chart-header"><div><div class="chart-title">Recruitment Heatmap — Process × Preferred Location</div><div class="chart-sub">Candidate density at each intersection</div></div><span class="chart-badge badge-purple">HEATMAP</span></div>
+      <div class="heatmap-wrap" id="heatmapWrap"></div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE 4: Candidate Funnel ═══ -->
+  <div class="page" id="p4">
+    <div class="page-header">
+      <div class="page-title">Candidate Funnel</div>
+      <div class="page-sub">Pipeline stage conversion and disposition analysis</div>
+    </div>
+    <div class="chart-grid-2">
+      <div class="chart-card">
+        <div class="chart-header"><div><div class="chart-title">Recruitment Funnel</div><div class="chart-sub">Stage-by-stage pipeline flow</div></div><span class="chart-badge badge-blue">FUNNEL</span></div>
+        <div class="funnel-wrap" id="funnelWrap"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div><div class="chart-title">Disposition Breakdown</div><div class="chart-sub">Why candidates did not progress</div></div><span class="chart-badge badge-teal">BAR CHART</span></div>
+        <div style="position:relative;height:280px"><canvas id="dispositionChart"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-card chart-grid-full">
+      <div class="chart-header"><div><div class="chart-title">JL × Process Matrix</div><div class="chart-sub">Candidate count breakdown</div></div><span class="chart-badge badge-purple">GROUPED BAR</span></div>
+      <div style="position:relative;height:220px"><canvas id="jlProcessChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE 5: Data Quality ═══ -->
+  <div class="page" id="p5">
+    <div class="page-header">
+      <div class="page-title">Data Quality Dashboard</div>
+      <div class="page-sub">Completeness, validity and accuracy of candidate records</div>
+    </div>
+    <div class="chart-grid-2" style="margin-bottom:18px">
+      <div class="chart-card">
+        <div class="chart-header"><div><div class="chart-title">Overall Data Quality Score</div><div class="chart-sub">Based on contact + email validity</div></div><span class="chart-badge badge-blue">GAUGE</span></div>
+        <div class="gauge-wrap">
+          <div class="gauge-value" id="gaugeValue">98.4%</div>
+          <div class="gauge-label" id="gaugeLabel">Excellent — Meets Enterprise Standard</div>
+          <div class="gauge-bar-wrap"><div class="gauge-bar" id="gaugeBar" style="width:0%"></div></div>
+          <div style="display:flex;justify-content:space-between;width:100%;font-size:10.5px;color:var(--light)"><span>0%</span><span>50%</span><span>100%</span></div>
+        </div>
+        <div class="dq-grid" style="margin-top:16px" id="dqGrid"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div><div class="chart-title">Field Completeness</div><div class="chart-sub">% of records populated per column</div></div><span class="chart-badge badge-purple">H-BAR</span></div>
+        <div style="position:relative;height:320px"><canvas id="completenessChart"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-card chart-grid-full">
+      <div class="chart-header"><div><div class="chart-title">Unique vs Duplicate Records by Process</div><div class="chart-sub">Stacked view for pipeline hygiene</div></div><span class="chart-badge badge-teal">STACKED COLUMN</span></div>
+      <div style="position:relative;height:250px"><canvas id="dupByProcess"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE 6: Dataset Comparison ═══ -->
+  <div class="page" id="p6">
+    <div class="page-header">
+      <div class="page-title">Dataset Comparison</div>
+      <div class="page-sub">Ordered (61 unique records) vs Unordered (315 unique records) — side-by-side analysis</div>
+    </div>
+    <div class="chart-grid-2">
+      <div class="chart-card">
+        <div class="chart-header"><div><div class="chart-title">KPI Comparison</div><div class="chart-sub">Key metrics across both datasets</div></div><span class="chart-badge badge-blue">TABLE</span></div>
+        <table class="compare-table">
+          <thead><tr><th>Metric</th><th>Ordered Data</th><th>Unordered Data</th><th>Change</th></tr></thead>
+          <tbody>
+            <tr><td>Total Candidates</td><td>61</td><td>315</td><td class="up">+416%</td></tr>
+            <tr><td>Unique Candidates</td><td>61</td><td>315</td><td class="up">+416%</td></tr>
+            <tr><td>Active Processes</td><td>11</td><td>8</td><td class="down">-3</td></tr>
+            <tr><td>Source Locations</td><td>10</td><td>8</td><td class="down">-2</td></tr>
+            <tr><td>Valid Contacts %</td><td>100%</td><td>99.1%</td><td class="up">+0%</td></tr>
+            <tr><td>Valid Emails %</td><td>100%</td><td>98.1%</td><td class="up">+0%</td></tr>
+            <tr><td>Duplicate %</td><td>0%</td><td>0%</td><td class="up">✓ Clean</td></tr>
+            <tr><td>Data Quality Score</td><td>100%</td><td>99.1%</td><td class="up">✓ Excellent</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div><div class="chart-title">Pipeline Volume Comparison</div><div class="chart-sub">Total vs Unique candidates</div></div><span class="chart-badge badge-teal">GROUPED BAR</span></div>
+        <div style="position:relative;height:280px"><canvas id="compareVolumeChart"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-grid-2">
+      <div class="chart-card">
+        <div class="chart-header"><div><div class="chart-title">Data Quality Comparison</div><div class="chart-sub">Valid contacts, emails, DQ score</div></div><span class="chart-badge badge-purple">GROUPED BAR</span></div>
+        <div style="position:relative;height:250px"><canvas id="compareDQChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div><div class="chart-title">JL Distribution Comparison</div><div class="chart-sub">Job level split across datasets</div></div><span class="chart-badge badge-blue">GROUPED BAR</span></div>
+        <div style="position:relative;height:250px"><canvas id="compareJLChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+// ─── Datasets ────────────────────────────────────────
+const DATASETS = {
+  overall: {
+    label: 'Overall Combined (376)',
+    kpis: { total:376, unique:376, processes:17, locations:14, contacts:373, emails:370, dupPct:'0%', dq:'98.4%', dupCount:0, invalidC:2, invalidE:6 },
+    narrative: `The overall recruitment pipeline combines <strong>376 unique candidates</strong> (deduplicated) across <strong>17 active processes</strong>, sourced from <strong>14 locations</strong> across India. The unordered stream (315 candidates) is dominated by supply chain roles with <strong>SCM - Varun</strong> and <strong>Supply Chain Mgmt</strong> at 29.2% and 28.9% respectively, while the ordered stream (61 candidates) is led by <strong>Order Management</strong> at 37.7%. Combined data quality score stands at <strong>98.4%</strong> with 373 valid contacts and 370 verified email IDs. <strong>Bangalore/Bengaluru</strong> is the overwhelming preferred hub (46.3%), making it the primary destination and sourcing city. <strong>No duplicate records remain</strong> after deduplication across both datasets. <strong>JL 3A</strong> dominates at 62.0% of the combined pipeline.`,
+    process: { 'SCM - Varun':92, 'Supply Chain Mgmt':91, 'Order Management':23, 'Intl Voice':66, 'SCM - Kumaravel':30, 'French Process':28, 'Title Search':6, 'P2P':5, 'Retail Banking':8, 'S & F':4, 'MDM':4, 'Dom. Voice':4, 'Supply Chain':3, 'Quality Analysis':4, 'Sup. Chain Mgmt':2, 'French Process':2, 'Cust. Support':1 },
+    jl: { '3A':174, '2A':51, '4B':27 },
+    remark: { 'PE':8, 'NP':6, 'NA':22, 'Not okay / Relocation':4, 'Average +':26, 'Good':12, 'Average':10, 'Other':288 },
+    prefLoc: { 'Bangalore':163, 'Bengaluru':35, 'Pune':34, 'Hyderabad':21, 'Chennai':6, 'Coimbatore':8, 'Tiruchirappalli':7, 'Erode':2, 'Tirupur':2, 'Mangalore':2, 'Kerala':4, 'Salem':2, 'Conoor':2, 'Vishakapatanam':1 },
+    sourceLoc: { 'Bangalore':24, 'Bengaluru':10, 'Coimbatore':6, 'Pune':11, 'Erode':5, 'Chennai':19, 'Kerala':4, 'Hyderabad':15, 'Salem':2, 'Conoor':2, 'Gurugram':1, 'Kolkata':1, 'New Delhi':1, 'Vishakapatanam':1 },
+    disposition: { 'Average +':26, 'Good':12, 'Average':10, 'NP (Not Processing)':63, 'Not Interested/Available':35, 'Poor Communication':20, 'PE (Profile Evaluated)':26, 'Call Back':7, 'Cannot Attend':14, 'Not Looking':12, 'No Incoming Calls':3, 'Drop':2, 'Crosscheck Rej':1, 'Good for Infosys':1, 'NP':5, 'Other':138 },
+    funnel: [
+      { label:'Total Applied/Contacted', count:376, pct:100, color:'#1a3c6e' },
+      { label:'Profiles Screened/Checked', count:300, pct:79.8, color:'#2563b0' },
+      { label:'Pre-Interview / PE', count:68, pct:18.1, color:'#0ea5e9' },
+      { label:'Interview Scheduled/Reached', count:45, pct:11.9, color:'#14b8a6' },
+      { label:'Selected / Active', count:11, pct:2.9, color:'#10b981' }
+    ],
+    dupByProcess: {
+      labels:['SCM - Varun','Supply Chain','Intl Voice','Order Mgmt','SCM - Kumar','French','Title Search'],
+      unique:[92,91,66,23,30,28,6], dups:[0,0,0,0,0,0,0]
+    },
+    completeness: {
+      fields:['Name','Contact No','Mail ID','Process','JL','Location','Remark'],
+      pcts:[100,99.2,98.4,98.1,72.3,100,100]
+    },
+    jlProcess: {
+      labels:['SCM - Varun','Supply Chain','Intl Voice','Order Mgmt','SCM - Kumar','French','P2P'],
+      jl3a:[60,65,47,19,19,5,4], jl2a:[19,17,15,3,8,14,1], jl4b:[13,9,8,1,3,12,0]
+    },
+    heatmap: {
+      processes:['SCM - Varun','Supply Chain Mgmt','Intl Voice','Order Mgmt','SCM - Kumaravel','French Process'],
+      locations:['Bangalore','Bengaluru','Pune','Hyderabad','Coimbatore','Chennai','Erode','Kerala'],
+      matrix:[[46,13,19,11,4,4,1,0],[37,14,17,9,6,4,2,0],[26,5,8,5,1,2,0,1],[7,3,3,3,2,2,3,3],[11,4,7,4,2,2,0,0],[8,5,3,3,3,2,1,0],[2,2,2,1,1,0,0,0]]
+    }
+  },
+  unordered: {
+    label: 'Unordered Data (315)',
+    kpis: { total:315, unique:315, processes:8, locations:8, contacts:312, emails:309, dupPct:'0%', dq:'99.1%', dupCount:0, invalidC:2, invalidE:3 },
+    narrative: `The unordered recruitment dataset now contains <strong>315 unique candidates</strong> (deduplicated) across <strong>8 active processes</strong>, sourced from <strong>8 locations</strong> across India. <strong>SCM - Varun</strong> leads with 29.2% of all candidates, followed by <strong>Supply Chain Mgmt</strong> at 28.9% — supply chain roles dominate 58% of the pipeline. <strong>International Voice</strong> contributes 19.0%. The data quality score has improved to <strong>99.1%</strong> with 312 valid contacts and 309 verified email IDs. <strong>Bangalore + Bengaluru</strong> combined is the overwhelming preferred destination (47.6%), with <strong>Pune</strong> as a strong second at 9.8%. <strong>No duplicate records remain</strong> after deduplication. <strong>JL 3A</strong> dominates at 64.8% of unique candidates.`,
+    process: { 'SCM - Varun':92, 'Supply Chain Mgmt':91, 'Intl Voice':60, 'SCM - Kumaravel':30, 'French Process':26, 'Retail Banking':8, 'MDM':4, 'Quality Analysis':4 },
+    jl: { '3A':124, '2A':41, '4B':26 },
+    remark: { 'PE':8, 'NP':6, 'NA':22, 'Not okay / Relocation':4, 'Other':275 },
+    prefLoc: { 'Bangalore':114, 'Bengaluru':35, 'Pune':31, 'Hyderabad':18, 'Coimbatore':8, 'Tiruchirappalli':7, 'Chennai':6, 'Erode':2, 'Tirupur':2, 'Mangalore':2 },
+    sourceLoc: { 'Chennai':15, 'Hyderabad':11, 'Bangalore':10, 'Pune':5, 'Gurugram':1, 'Kolkata':1, 'New Delhi':1, 'Vishakapatanam':1 },
+    disposition: { 'NP (Not Processing)':63, 'Not Interested/Available':35, 'Poor Communication':20, 'PE (Profile Evaluated)':26, 'Call Back':7, 'Cannot Attend':14, 'Not Looking':12, 'No Incoming Calls':3 },
+    funnel: [
+      { label:'Total Contacted', count:315, pct:100, color:'#1a3c6e' },
+      { label:'Profile Screened', count:251, pct:79.7, color:'#2563b0' },
+      { label:'PE (Eligible)', count:26, pct:8.3, color:'#0ea5e9' },
+      { label:'City-Allocated (Shortlisted)', count:228, pct:72.4, color:'#14b8a6' },
+      { label:'Active / Reached', count:9, pct:2.9, color:'#10b981' }
+    ],
+    dupByProcess: {
+      labels:['SCM - Varun','Supply Chain','Intl Voice','SCM - Kumar','French'],
+      unique:[92,91,60,30,26], dups:[0,0,0,0,0]
+    },
+    completeness: {
+      fields:['Name','Contact No','Mail ID','Process','JL','Location','Remark'],
+      pcts:[100,99.1,98.1,97.8,62.2,100,100]
+    },
+    jlProcess: {
+      labels:['SCM - Varun','Supply Chain','Intl Voice','SCM - Kumar','French','Retail Banking'],
+      jl3a:[60,65,42,19,5,0], jl2a:[19,17,10,8,9,5], jl4b:[13,9,8,3,12,4]
+    },
+    heatmap: {
+      processes:['SCM - Varun','Supply Chain Mgmt','Intl Voice','SCM - Kumaravel','French Process','Retail Banking'],
+      locations:['Bangalore','Bengaluru','Pune','Hyderabad','Coimbatore','Chennai','Erode'],
+      matrix:[[39,13,19,11,4,4,1],[37,14,17,9,6,4,2],[23,5,6,5,1,2,0],[11,4,7,4,2,2,0],[8,5,3,3,3,2,1],[2,2,2,1,1,0,0]]
+    }
+  },
+  ordered: {
+    label: 'Ordered Data (61)',
+    kpis: { total:61, unique:61, processes:11, locations:10, contacts:61, emails:61, dupPct:'0%', dq:'100%', dupCount:0, invalidC:0, invalidE:0 },
+    narrative: `The ordered recruitment pipeline now contains <strong>61 unique candidates</strong> (deduplicated) across <strong>11 active processes</strong>, sourced from <strong>10 locations</strong> across India. <strong>Order Management</strong> leads with 37.7% of all candidates, followed by <strong>Title Search</strong> and <strong>International Voice</strong> at 9.8% each. The data quality score is now <strong>100%</strong> with all 61 records having valid contacts and verified emails. <strong>Bangalore/Bengaluru</strong> is the dominant sourcing hub (39.3%), and <strong>Response</strong> remains the top sourcing channel. <strong>No duplicate records remain</strong> after deduplication. <strong>JL 3A</strong> makes up 82.0% of the unique pipeline.`,
+    process: { 'Order Management':23, 'Title Search':6, "Int'l Voice":6, 'P2P':5, 'SCM':5, 'S & F':4, 'Dom. Voice':4, 'Supply Chain':3, 'French Process':2, 'Sup. Chain Mgmt':2, 'Cust. Support':1 },
+    jl: { '3A':50, '2A':10, '4B':1 },
+    remark: { 'Average +':26, 'Good':12, 'Average':10, 'Other':13 },
+    prefLoc: { 'Bangalore':49, 'Chennai':6, 'Hyderabad':3, 'Pune':3 },
+    sourceLoc: { 'Bangalore':14, 'Bengaluru':10, 'Coimbatore':6, 'Pune':6, 'Erode':5, 'Chennai':4, 'Kerala':4, 'Hyderabad':4, 'Salem':2, 'Conoor':2 },
+    disposition: { 'Average +':26, 'Good':12, 'Average':10, 'NP':5, 'Drop':2, 'Crosscheck Rej':1, 'Good for Infosys':1, 'Other':4 },
+    funnel: [
+      { label:'Total Applied', count:61, pct:100, color:'#1a3c6e' },
+      { label:'Crosscheck Done', count:49, pct:80.3, color:'#2563b0' },
+      { label:'Interview Scheduled', count:42, pct:68.9, color:'#0ea5e9' },
+      { label:'Interview Reached', count:3, pct:4.9, color:'#14b8a6' },
+      { label:'Selected / Good to Go', count:2, pct:3.3, color:'#10b981' }
+    ],
+    dupByProcess: {
+      labels:['Order Mgmt','Title Search','Intl Voice','P2P','SCM'],
+      unique:[23,6,6,5,5], dups:[0,0,0,0,0]
+    },
+    completeness: {
+      fields:['Name','Contact No','Mail ID','Process','JL','Location','Quality','CTC','ECTC'],
+      pcts:[100,100,100,100,82,100,90,95,92]
+    },
+    jlProcess: {
+      labels:['Order Mgmt','Title Search','Intl Voice','P2P','SCM','S & F'],
+      jl3a:[19,5,5,4,4,4], jl2a:[3,1,1,1,1,0], jl4b:[1,0,0,0,0,0]
+    },
+    heatmap: {
+      processes:['Order Mgmt','Title Search','Intl Voice','P2P','SCM','S & F'],
+      locations:['Bangalore','Coimbatore','Pune','Erode','Chennai','Kerala','Hyderabad'],
+      matrix:[[7,3,3,3,2,2,3],[2,2,1,1,0,0,1],[3,1,1,1,0,1,0],[2,0,1,0,1,1,1],[2,0,1,1,0,0,2],[2,1,1,0,1,0,0]]
+    }
+  }
+};
+
+let currentDataset = 'unordered';
+let charts = {};
+let filters = { process: '', jl: '', remark: '' };
+let filteredData = {};
+
+const PALETTE = ['#1a3c6e','#0ea5e9','#14b8a6','#8b5cf6','#f59e0b','#ef4444','#10b981','#6366f1','#f97316','#06b6d4','#84cc16','#ec4899'];
+const FC = '#64748b', GC = '#e2e8f0';
+
+// ─── Nav ─────────────────────────────────────────────
+const pageTitles = { p1:'Executive Summary',p2:'Recruitment Analytics',p3:'Location Insights',p4:'Candidate Funnel',p5:'Data Quality Dashboard',p6:'Dataset Comparison' };
+function showPage(id,btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  document.getElementById('topbarTitle').textContent = pageTitles[id];
+  if(id==='p5') setTimeout(()=>{ document.getElementById('gaugeBar').style.width = DATASETS[currentDataset].kpis.dq; },200);
+}
+
+function switchDataset(ds, btn) {
+  currentDataset = ds;
+  document.querySelectorAll('.dtab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  filters = { process: '', jl: '', remark: '' };
+  document.getElementById('f-process').value = '';
+  document.getElementById('f-jl').value = '';
+  document.getElementById('f-remark').value = '';
+  applyFilters();
+}
+
+function applyFilters() {
+  const D = DATASETS[currentDataset];
+  const filterProcess = document.getElementById('f-process').value;
+  const filterJL = document.getElementById('f-jl').value;
+  const filterRemark = document.getElementById('f-remark').value;
+  
+  filters = { process: filterProcess, jl: filterJL, remark: filterRemark };
+  
+  if(!filterProcess && !filterJL && !filterRemark) {
+    // No filters, use original data
+    filteredData = {};
+    renderAll();
+    return;
+  }
+  
+  // Create filtered dataset with all calculations
+  filteredData = JSON.parse(JSON.stringify(D));
+  
+  // Calculate the filter ratio
+  let filterRatio = 1;
+  
+  if(filterProcess) {
+    // Filtering by process
+    const procTotal = D.process[filterProcess] || 0;
+    filterRatio = procTotal / D.kpis.total;
+    filteredData.process = { [filterProcess]: procTotal };
+    
+    // Scale JL distribution for this process
+    const jlScaledData = {};
+    Object.entries(D.jl).forEach(([jl, count]) => {
+      jlScaledData[jl] = Math.round(count * filterRatio);
+    });
+    filteredData.jl = jlScaledData;
+    
+    // Scale remark distribution for this process
+    const remScaledData = {};
+    Object.entries(D.remark).forEach(([rem, count]) => {
+      remScaledData[rem] = Math.round(count * filterRatio);
+    });
+    filteredData.remark = remScaledData;
+    
+  } else if(filterJL) {
+    // Filtering by JL
+    const jlTotal = D.jl[filterJL] || 0;
+    filterRatio = jlTotal / D.kpis.total;
+    filteredData.jl = { [filterJL]: jlTotal };
+    
+    // Scale process distribution for this JL
+    const procScaledData = {};
+    Object.entries(D.process).forEach(([proc, count]) => {
+      procScaledData[proc] = Math.round(count * filterRatio);
+    });
+    filteredData.process = procScaledData;
+    
+    // Scale remark distribution for this JL
+    const remScaledData = {};
+    Object.entries(D.remark).forEach(([rem, count]) => {
+      remScaledData[rem] = Math.round(count * filterRatio);
+    });
+    filteredData.remark = remScaledData;
+    
+  } else if(filterRemark) {
+    // Filtering by remark
+    const remTotal = D.remark[filterRemark] || 0;
+    filterRatio = remTotal / D.kpis.total;
+    filteredData.remark = { [filterRemark]: remTotal };
+    
+    // Scale process distribution for this remark
+    const procScaledData = {};
+    Object.entries(D.process).forEach(([proc, count]) => {
+      procScaledData[proc] = Math.round(count * filterRatio);
+    });
+    filteredData.process = procScaledData;
+    
+    // Scale JL distribution for this remark
+    const jlScaledData = {};
+    Object.entries(D.jl).forEach(([jl, count]) => {
+      jlScaledData[jl] = Math.round(count * filterRatio);
+    });
+    filteredData.jl = jlScaledData;
+  }
+  
+  // Scale all other data proportionally
+  const scaledPrefLoc = {};
+  Object.entries(D.prefLoc).forEach(([loc, count]) => {
+    scaledPrefLoc[loc] = Math.round(count * filterRatio);
+  });
+  filteredData.prefLoc = scaledPrefLoc;
+  
+  const scaledSourceLoc = {};
+  Object.entries(D.sourceLoc).forEach(([loc, count]) => {
+    scaledSourceLoc[loc] = Math.round(count * filterRatio);
+  });
+  filteredData.sourceLoc = scaledSourceLoc;
+  
+  const scaledDisposition = {};
+  Object.entries(D.disposition).forEach(([disp, count]) => {
+    scaledDisposition[disp] = Math.round(count * filterRatio);
+  });
+  filteredData.disposition = scaledDisposition;
+  
+  // Scale KPIs
+  const totalFiltered = Math.round(D.kpis.total * filterRatio);
+  const uniqueFiltered = Math.round(D.kpis.unique * filterRatio);
+  const contactsFiltered = Math.round(D.kpis.contacts * filterRatio);
+  const emailsFiltered = Math.round(D.kpis.emails * filterRatio);
+  
+  filteredData.kpis = {
+    total: totalFiltered,
+    unique: uniqueFiltered,
+    processes: D.kpis.processes,
+    locations: D.kpis.locations,
+    contacts: contactsFiltered,
+    emails: emailsFiltered,
+    dupPct: D.kpis.dupPct,
+    dq: D.kpis.dq,
+    dupCount: Math.round(D.kpis.dupCount * filterRatio),
+    invalidC: Math.round(D.kpis.invalidC * filterRatio),
+    invalidE: Math.round(D.kpis.invalidE * filterRatio)
+  };
+  
+  // Scale funnel data
+  filteredData.funnel = D.funnel.map(stage => ({
+    ...stage,
+    count: Math.round(stage.count * filterRatio)
+  }));
+  
+  // Scale dupByProcess data
+  filteredData.dupByProcess = {
+    ...D.dupByProcess,
+    unique: D.dupByProcess.unique.map(v => Math.round(v * filterRatio)),
+    dups: D.dupByProcess.dups.map(v => Math.round(v * filterRatio))
+  };
+  
+  // Scale completeness (percentages stay the same)
+  filteredData.completeness = D.completeness;
+  
+  // Scale jlProcess
+  filteredData.jlProcess = {
+    ...D.jlProcess,
+    jl3a: D.jlProcess.jl3a.map(v => Math.round(v * filterRatio)),
+    jl2a: D.jlProcess.jl2a.map(v => Math.round(v * filterRatio)),
+    jl4b: D.jlProcess.jl4b.map(v => Math.round(v * filterRatio))
+  };
+  
+  // Scale heatmap
+  filteredData.heatmap = {
+    ...D.heatmap,
+    matrix: D.heatmap.matrix.map(row => row.map(v => Math.round(v * filterRatio)))
+  };
+  
+  renderAll();
+}
+
+function resetFilters() {
+  document.getElementById('f-process').value = '';
+  document.getElementById('f-jl').value = '';
+  document.getElementById('f-remark').value = '';
+  filters = { process: '', jl: '', remark: '' };
+  filteredData = {};
+  renderAll();
+}
+
+// ─── Date ────────────────────────────────────────────
+document.getElementById('liveDateChip').textContent = 'May 29, 2026';
+
+// ─── Chart helpers ───────────────────────────────────
+function mc(id, config) {
+  const ctx = document.getElementById(id);
+  if(!ctx) return;
+  if(charts[id]) charts[id].destroy();
+  charts[id] = new Chart(ctx, config);
+}
+function legend(cid, labels, colors) {
+  const el = document.getElementById(cid);
+  if(!el) return;
+  el.innerHTML = labels.map((l,i)=>`<div class="legend-item"><div class="legend-dot" style="background:${colors[i%colors.length]}"></div>${l}</div>`).join('');
+}
+
+// ─── Render all ──────────────────────────────────────
+function renderAll() {
+  const D = Object.keys(filteredData).length > 0 ? filteredData : DATASETS[currentDataset];
+  renderKPIs(D);
+  renderNarrative(D);
+  renderProcessChart(D);
+  renderJLChart(D);
+  renderRemarkChart(D);
+  renderPrefLocChart(D);
+  renderDecomp(D);
+  renderKI(D);
+  renderDupChart(D);
+  renderTreemap(D);
+  renderLocationChart(D);
+  renderPrefDestChart(D);
+  renderHeatmap(D);
+  renderFunnel(D);
+  renderDispositionChart(D);
+  renderJLProcessChart(D);
+  renderCompletenessChart(D);
+  renderDQGrid(D);
+  renderDupByProcess(D);
+  renderCompareCharts();
+  updateFilterOptions(DATASETS[currentDataset]);
+}
+
+// ─── KPIs ────────────────────────────────────────────
+function renderKPIs(D) {
+  const k = D.kpis;
+  document.getElementById('kpi-total').textContent = k.total;
+  document.getElementById('kpi-unique').textContent = k.unique;
+  document.getElementById('kpi-process').textContent = k.processes;
+  document.getElementById('kpi-location').textContent = k.locations;
+  document.getElementById('kpi-contacts').textContent = k.contacts;
+  document.getElementById('kpi-emails').textContent = k.emails;
+  document.getElementById('kpi-dup').textContent = k.dupPct;
+  document.getElementById('kpi-dq').textContent = k.dq;
+  document.getElementById('kpi-unique-sub').textContent = `↑ ${Math.round(k.unique/k.total*1000)/10}% unique rate`;
+  document.getElementById('kpi-contacts-sub').textContent = `↑ ${Math.round(k.contacts/k.total*1000)/10}% valid`;
+  document.getElementById('kpi-emails-sub').textContent = `↑ ${Math.round(k.emails/k.total*1000)/10}% valid`;
+  document.getElementById('kpi-dup-sub').textContent = `↓ ${k.dupCount} duplicates`;
+  document.getElementById('p1sub').textContent = `Holistic overview — ${D.label} · May 2026`;
+}
+
+// ─── Narrative ───────────────────────────────────────
+function renderNarrative(D) {
+  document.getElementById('narrativeText').innerHTML = D.narrative;
+}
+
+// ─── Process Bar ─────────────────────────────────────
+function renderProcessChart(D) {
+  const labels = Object.keys(D.process), values = Object.values(D.process);
+  mc('processChart', { type:'bar', data:{ labels, datasets:[{ data:values, backgroundColor:PALETTE, borderRadius:6, borderSkipped:false }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.raw} candidates`}} },
+      scales:{ x:{grid:{color:GC},ticks:{color:FC,font:{size:11}}}, y:{grid:{display:false},ticks:{color:FC,font:{size:11}}} }
+    }});
+}
+
+// ─── JL Pie ──────────────────────────────────────────
+function renderJLChart(D) {
+  const labels = Object.keys(D.jl), values = Object.values(D.jl);
+  const colors = ['#1a3c6e','#0ea5e9','#14b8a6'];
+  mc('jlChart', { type:'pie', data:{ labels, datasets:[{ data:values, backgroundColor:colors, borderWidth:3, borderColor:'#fff' }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw}`}} } }
+  });
+  legend('jlLegend', labels.map((l,i)=>`${l} (${values[i]})`), colors);
+}
+
+// ─── Remark Donut ────────────────────────────────────
+function renderRemarkChart(D) {
+  const labels = Object.keys(D.remark), values = Object.values(D.remark);
+  const colors = ['#10b981','#ef4444','#64748b','#f59e0b','#8b5cf6'];
+  mc('remarkChart', { type:'doughnut', data:{ labels, datasets:[{ data:values, backgroundColor:colors, borderWidth:3, borderColor:'#fff' }] },
+    options:{ cutout:'66%', responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} } }
+  });
+  legend('remarkLegend', labels.map((l,i)=>`${l} (${values[i]})`), colors);
+}
+
+// ─── Pref Loc Bar ────────────────────────────────────
+function renderPrefLocChart(D) {
+  const entries = Object.entries(D.prefLoc).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  mc('prefLocChart', { type:'bar', data:{ labels:entries.map(e=>e[0]), datasets:[{ data:entries.map(e=>e[1]), backgroundColor:PALETTE, borderRadius:6, borderSkipped:false }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ x:{grid:{color:GC},ticks:{color:FC}}, y:{grid:{display:false},ticks:{color:FC,font:{size:11}}} }
+    }});
+}
+
+// ─── Decomp ──────────────────────────────────────────
+function renderDecomp(D) {
+  const topProc = Object.entries(D.process).sort((a,b)=>b[1]-a[1])[0];
+  const topLoc = Object.entries(D.prefLoc).sort((a,b)=>b[1]-a[1])[0];
+  const topJL = Object.entries(D.jl).sort((a,b)=>b[1]-a[1])[0];
+  const total = D.kpis.total;
+  const nodes = [
+    { label:'Total', val:total, pct:'100%' },
+    { label:topProc[0], val:topProc[1], pct:Math.round(topProc[1]/total*1000)/10+'%' },
+    { label:topLoc[0]+' (Pref)', val:topLoc[1], pct:Math.round(topLoc[1]/total*1000)/10+'%' },
+    { label:topJL[0]+' Level', val:topJL[1], pct:Math.round(topJL[1]/total*1000)/10+'%' },
+    { label:'Valid Contacts', val:D.kpis.contacts, pct:Math.round(D.kpis.contacts/total*1000)/10+'%' }
+  ];
+  document.getElementById('decompTree').innerHTML = nodes.map((n,i)=>
+    `<div class="decomp-node" style="border-left-color:${PALETTE[i]}">
+      <div class="dn-label">${n.label}</div>
+      <div class="dn-val" style="color:${PALETTE[i]}">${n.val}</div>
+      <div class="dn-pct">${n.pct}</div>
+    </div>${i<nodes.length-1?'<div class="decomp-arrow">→</div>':''}`
+  ).join('');
+}
+
+// ─── KI ──────────────────────────────────────────────
+function renderKI(D) {
+  const total = D.kpis.total;
+  const items = Object.entries(D.process).sort((a,b)=>b[1]-a[1]).map(([label,val],i)=>({
+    label, score:Math.round(val/total*100), color:PALETTE[i%PALETTE.length]
+  }));
+  document.getElementById('kiList').innerHTML = items.map(it=>
+    `<div class="ki-row">
+      <div class="ki-label">${it.label}</div>
+      <div class="ki-bar-outer"><div class="ki-bar-inner" style="width:${it.score}%;background:${it.color}"></div></div>
+      <div class="ki-score" style="color:${it.color}">${it.score}%</div>
+    </div>`
+  ).join('');
+}
+
+// ─── Dup Chart ───────────────────────────────────────
+function renderDupChart(D) {
+  const db = D.dupByProcess;
+  mc('dupChart', { type:'bar', data:{ labels:db.labels,
+    datasets:[
+      { label:'Unique', data:db.unique, backgroundColor:'#1a3c6e', borderRadius:4, borderSkipped:false },
+      { label:'Duplicate', data:db.dups, backgroundColor:'#ef4444', borderRadius:4, borderSkipped:false }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'top',labels:{color:FC,font:{size:11}}} },
+      scales:{ x:{stacked:true,grid:{display:false},ticks:{color:FC,font:{size:10}}}, y:{stacked:true,grid:{color:GC},ticks:{color:FC}} }
+    }});
+}
+
+// ─── Treemap ─────────────────────────────────────────
+function renderTreemap(D) {
+  const items = Object.entries(D.process).sort((a,b)=>b[1]-a[1]);
+  const total = Object.values(D.process).reduce((s,v)=>s+v,0);
+  document.getElementById('processTreap').innerHTML = items.map(([label,val],i)=>{
+    const pct = val/total;
+    return `<div class="treemap-cell" style="background:${PALETTE[i%PALETTE.length]};flex:${Math.max(pct*10,0.4)} 1 ${Math.max(pct*350,55)}px;min-width:${Math.max(pct*350,55)}px">
+      <div class="treemap-val">${val}</div><div>${label}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Location charts ─────────────────────────────────
+function renderLocationChart(D) {
+  const entries = Object.entries(D.sourceLoc).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  mc('locationChart', { type:'bar', data:{ labels:entries.map(e=>e[0]), datasets:[{ data:entries.map(e=>e[1]), backgroundColor:PALETTE, borderRadius:6, borderSkipped:false }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ x:{grid:{color:GC},ticks:{color:FC}}, y:{grid:{display:false},ticks:{color:FC}} }
+    }});
+}
+function renderPrefDestChart(D) {
+  const entries = Object.entries(D.prefLoc).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  mc('prefDestChart', { type:'bar', data:{ labels:entries.map(e=>e[0]), datasets:[{ data:entries.map(e=>e[1]), backgroundColor:PALETTE.slice(0,10), borderRadius:6, borderSkipped:false }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ y:{grid:{color:GC},ticks:{color:FC}}, x:{grid:{display:false},ticks:{color:FC,font:{size:11}}} }
+    }});
+}
+
+// ─── Heatmap ─────────────────────────────────────────
+function renderHeatmap(D) {
+  const { processes, locations, matrix } = D.heatmap;
+  const maxVal = Math.max(...matrix.flat());
+  function cellColor(v) {
+    if(v===0) return '#f0f4f8';
+    const p = v/maxVal;
+    if(p<0.2) return '#e0ecff'; if(p<0.4) return '#b3d0f5';
+    if(p<0.6) return '#5a9de0'; if(p<0.8) return '#2563b0'; return '#1a3c6e';
+  }
+  function tc(v){ return v/maxVal < 0.4 ? '#1a3c6e' : '#fff'; }
+  let html = '<table class="heatmap-table"><thead><tr><th>Process \\ Location</th>';
+  locations.forEach(l=>html+=`<th>${l}</th>`);
+  html+='</tr></thead><tbody>';
+  processes.forEach((p,pi)=>{
+    html+=`<tr><th>${p}</th>`;
+    locations.forEach((_,li)=>{ const v=matrix[pi][li]; html+=`<td style="background:${cellColor(v)};color:${tc(v)}">${v||'—'}</td>`; });
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  document.getElementById('heatmapWrap').innerHTML = html;
+}
+
+// ─── Funnel ──────────────────────────────────────────
+function renderFunnel(D) {
+  document.getElementById('funnelWrap').innerHTML = D.funnel.map(s=>
+    `<div class="funnel-row">
+      <div class="funnel-meta"><div class="funnel-step">${s.label}</div><div class="funnel-count">${s.count} candidates (${s.pct}%)</div></div>
+      <div class="funnel-bar-outer"><div class="funnel-bar-inner" style="width:${s.pct}%;background:${s.color}">${s.count}</div></div>
+    </div>`
+  ).join('');
+}
+
+// ─── Disposition ─────────────────────────────────────
+function renderDispositionChart(D) {
+  const labels = Object.keys(D.disposition), values = Object.values(D.disposition);
+  mc('dispositionChart', { type:'bar', data:{ labels, datasets:[{ data:values, backgroundColor:PALETTE, borderRadius:6, borderSkipped:false }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ y:{grid:{color:GC},ticks:{color:FC}}, x:{grid:{display:false},ticks:{color:FC,font:{size:10}}} }
+    }});
+}
+
+// ─── JL × Process ────────────────────────────────────
+function renderJLProcessChart(D) {
+  const jp = D.jlProcess;
+  mc('jlProcessChart', { type:'bar', data:{ labels:jp.labels,
+    datasets:[
+      { label:'JL 3A', data:jp.jl3a, backgroundColor:'#1a3c6e', borderRadius:4, borderSkipped:false },
+      { label:'JL 2A', data:jp.jl2a, backgroundColor:'#0ea5e9', borderRadius:4, borderSkipped:false },
+      { label:'JL 4B', data:jp.jl4b, backgroundColor:'#14b8a6', borderRadius:4, borderSkipped:false }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top',labels:{color:FC}}},
+      scales:{ x:{grid:{display:false},ticks:{color:FC}}, y:{grid:{color:GC},ticks:{color:FC}} }
+    }});
+}
+
+// ─── Completeness ────────────────────────────────────
+function renderCompletenessChart(D) {
+  const c = D.completeness;
+  mc('completenessChart', { type:'bar', data:{ labels:c.fields, datasets:[{ data:c.pcts,
+    backgroundColor:c.pcts.map(p=>p>=90?'#10b981':p>=70?'#f59e0b':'#ef4444'), borderRadius:6, borderSkipped:false }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.raw}% complete`}}},
+      scales:{ x:{grid:{color:GC},min:0,max:100,ticks:{color:FC,callback:v=>v+'%'}}, y:{grid:{display:false},ticks:{color:FC}} }
+    }});
+}
+
+// ─── DQ Grid ─────────────────────────────────────────
+function renderDQGrid(D) {
+  const k = D.kpis;
+  document.getElementById('gaugeValue').textContent = k.dq;
+  document.getElementById('gaugeBar').style.width = '0%';
+  setTimeout(()=>{ document.getElementById('gaugeBar').style.width = k.dq; },300);
+  document.getElementById('dqGrid').innerHTML = `
+    <div class="dq-item good"><div class="dq-val">${k.contacts}</div><div class="dq-lbl">Valid Contacts</div></div>
+    <div class="dq-item good"><div class="dq-val">${k.emails}</div><div class="dq-lbl">Valid Emails</div></div>
+    <div class="dq-item warn"><div class="dq-val">${k.invalidC}</div><div class="dq-lbl">Invalid Contacts</div></div>
+    <div class="dq-item warn"><div class="dq-val">${k.invalidE}</div><div class="dq-lbl">Invalid Emails</div></div>
+    <div class="dq-item bad"><div class="dq-val">${k.dupCount}</div><div class="dq-lbl">Duplicates</div></div>
+    <div class="dq-item good"><div class="dq-val">${k.total}</div><div class="dq-lbl">Total Records</div></div>`;
+}
+
+// ─── Dup by Process ──────────────────────────────────
+function renderDupByProcess(D) {
+  const db = D.dupByProcess;
+  mc('dupByProcess', { type:'bar', data:{ labels:db.labels,
+    datasets:[
+      { label:'Unique Records', data:db.unique, backgroundColor:'#2563b0', borderRadius:4, borderSkipped:false },
+      { label:'Duplicate Records', data:db.dups, backgroundColor:'#f59e0b', borderRadius:4, borderSkipped:false }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{color:FC}}},
+      scales:{ x:{stacked:true,grid:{display:false},ticks:{color:FC}}, y:{stacked:true,grid:{color:GC},ticks:{color:FC}} }
+    }});
+}
+
+// ─── Comparison charts ───────────────────────────────
+function renderCompareCharts() {
+  mc('compareVolumeChart', { type:'bar', data:{ labels:['Total Candidates','Unique Candidates'],
+    datasets:[
+      { label:'Ordered (61)', data:[61,61], backgroundColor:'#1a3c6e', borderRadius:6, borderSkipped:false },
+      { label:'Unordered (315)', data:[315,315], backgroundColor:'#0ea5e9', borderRadius:6, borderSkipped:false }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top',labels:{color:FC}}},
+      scales:{ y:{grid:{color:GC},ticks:{color:FC}}, x:{grid:{display:false},ticks:{color:FC}} }
+    }});
+  mc('compareDQChart', { type:'bar', data:{ labels:['Valid Contacts %','Valid Emails %','DQ Score %'],
+    datasets:[
+      { label:'Ordered', data:[100,100,100], backgroundColor:'#1a3c6e', borderRadius:6, borderSkipped:false },
+      { label:'Unordered', data:[99.1,98.1,99.1], backgroundColor:'#14b8a6', borderRadius:6, borderSkipped:false }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top',labels:{color:FC}}},
+      scales:{ y:{grid:{color:GC},min:95,max:100.5,ticks:{color:FC,callback:v=>v+'%'}}, x:{grid:{display:false},ticks:{color:FC}} }
+    }});
+  mc('compareJLChart', { type:'bar', data:{ labels:['JL 3A','JL 2A','JL 4B'],
+    datasets:[
+      { label:'Ordered', data:[50,10,1], backgroundColor:'#8b5cf6', borderRadius:6, borderSkipped:false },
+      { label:'Unordered', data:[124,41,26], backgroundColor:'#f59e0b', borderRadius:6, borderSkipped:false }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top',labels:{color:FC}}},
+      scales:{ y:{grid:{color:GC},ticks:{color:FC}}, x:{grid:{display:false},ticks:{color:FC}} }
+    }});
+}
+
+// ─── Filters ─────────────────────────────────────────
+function updateFilterOptions(D) {
+  const currentProcess = document.getElementById('f-process').value;
+  const currentJL = document.getElementById('f-jl').value;
+  const currentRemark = document.getElementById('f-remark').value;
+  
+  const sel = document.getElementById('f-process');
+  sel.innerHTML = '<option value="">All Processes</option>';
+  Object.keys(D.process).forEach(p=>{ sel.innerHTML += `<option>${p}</option>`; });
+  
+  // Restore previous selections
+  if(currentProcess) document.getElementById('f-process').value = currentProcess;
+  if(currentJL) document.getElementById('f-jl').value = currentJL;
+  if(currentRemark) document.getElementById('f-remark').value = currentRemark;
+}
+
+// ─── Init ────────────────────────────────────────────
+window.addEventListener('load', ()=>{ 
+  renderAll();
+  
+  // Add filter event listeners
+  document.getElementById('f-process').addEventListener('change', applyFilters);
+  document.getElementById('f-jl').addEventListener('change', applyFilters);
+  document.getElementById('f-remark').addEventListener('change', applyFilters);
+});
+</script>
+</body>
+</html>

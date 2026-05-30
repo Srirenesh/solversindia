@@ -1,0 +1,22 @@
+# Netlify Configuration for Recruitment Dashboard
+
+[build]
+  # No build command needed - this is a static site
+  publish = "recruitment_dashboard"
+
+[[redirects]]
+  # Redirect all non-file URLs to index.html for client-side routing
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers for optimal performance
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+    
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
